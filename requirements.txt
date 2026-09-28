@@ -1,0 +1,37 @@
+# Deep Learning
+torch
+transformers
+accelerate
+sentencepiece
+
+# Dataset
+datasets
+
+# Evaluation
+evaluate
+rouge-score
+nltk
+
+# Data Handling
+pandas
+numpy
+scikit-learn
+
+# Configuration
+PyYAML
+
+# Progress Bar
+tqdm
+
+# API
+fastapi
+uvicorn
+
+# Utilities
+python-box
+ensure
+joblib
+
+# Jupyter Notebook
+notebook
+ipykernel
