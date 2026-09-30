@@ -1,4 +1,6 @@
 import sys
+import json
+
 import torch
 
 from transformers import (
@@ -10,8 +12,9 @@ from transformers import (
 )
 
 from src.text_summarizer.logger import logger
-from src.text_summarizer.utils import read_yaml
+from src.text_summarizer.utils import read_yaml, resolve_path
 from src.text_summarizer.exception import CustomException
+from src.text_summarizer.components.lora import create_lora_model
 
 
 class ModelTrainer:
@@ -38,9 +41,11 @@ class ModelTrainer:
             # ---------------------------------
             # 3. Load pretrained Pegasus model
             # ---------------------------------
-            self.model = AutoModelForSeq2SeqLM.from_pretrained(
-                model_name
-            )
+            if self.config["lora"]["enabled"]:
+                self.model = create_lora_model(model_name, self.config["lora"])
+                self.model.print_trainable_parameters()
+            else:
+                self.model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 
             # Required/recommended when using
             # gradient checkpointing
@@ -127,18 +132,42 @@ class ModelTrainer:
             # 3. Training Arguments
             # =================================
 
+            tuned_parameters = {}
+            tuning_result = resolve_path(self.config["tuning"]["output_dir"]) / "best_hyperparameters.json"
+            if (
+                self.config["training"].get("use_tuned_hyperparameters", False)
+                and tuning_result.exists()
+            ):
+                with tuning_result.open("r", encoding="utf-8") as result_file:
+                    tuned_parameters = json.load(result_file)["hyperparameters"]
+                logger.info("Using tuned hyperparameters from %s", tuning_result)
+
+            output_dir = resolve_path(
+                self.config["paths"]["adapter_dir"]
+                if self.config["lora"]["enabled"]
+                else self.config["paths"]["model_dir"]
+            )
+
             training_args = Seq2SeqTrainingArguments(
 
                 # Where checkpoints/model are saved
-                output_dir=self.config["paths"]["model_dir"],
+                output_dir=output_dir,
 
                 # Training hyperparameters
                 num_train_epochs=float(
-                    self.config["training"]["epochs"]
+                    tuned_parameters.get("num_train_epochs", self.config["training"]["epochs"])
                 ),
 
                 learning_rate=float(
-                    self.config["training"]["learning_rate"]
+                    tuned_parameters.get("learning_rate", self.config["training"]["learning_rate"])
+                ),
+
+                weight_decay=float(tuned_parameters.get("weight_decay", 0.0)),
+
+                warmup_ratio=float(tuned_parameters.get("warmup_ratio", 0.0)),
+
+                label_smoothing_factor=float(
+                    tuned_parameters.get("label_smoothing_factor", 0.0)
                 ),
 
                 per_device_train_batch_size=int(
@@ -165,15 +194,19 @@ class ModelTrainer:
                 ),
 
                 # Mixed precision
-                fp16=bool(
-                    self.config["training"]["fp16"]
-                ),
+                fp16=bool(self.config["training"]["fp16"] and torch.cuda.is_available()),
 
                 # Evaluate after every epoch
                 eval_strategy="epoch",
 
                 # Save after every epoch
                 save_strategy="epoch",
+
+                load_best_model_at_end=True,
+
+                metric_for_best_model="eval_loss",
+
+                greater_is_better=False,
 
                 # Logging
                 logging_strategy="steps",
@@ -225,12 +258,10 @@ class ModelTrainer:
 
             logger.info("Saving trained model")
 
-            trainer.save_model(
-                self.config["paths"]["model_dir"]
-            )
+            trainer.save_model(output_dir)
 
             self.tokenizer.save_pretrained(
-                self.config["paths"]["model_dir"]
+                output_dir
             )
 
 

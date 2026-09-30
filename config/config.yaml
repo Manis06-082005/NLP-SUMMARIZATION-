@@ -5,21 +5,38 @@ dataset:
   dataset_name: "knkarthick/samsum"
 
 training:
-  epochs: 1
+  epochs: 3
   batch_size: 1
-  learning_rate: 0.00005
+  learning_rate: 0.0002
 
   max_input_length: 256
   max_target_length: 64
 
-  gradient_accumulation_steps: 4
+  gradient_accumulation_steps: 8
   gradient_checkpointing: true
   fp16: true
 
-  smoke_test: true
+  smoke_test: false
+  use_tuned_hyperparameters: true
   train_samples: 50
   validation_samples: 20
+
+tuning:
+  n_trials: 3
+  train_samples: 500
+  validation_samples: 100
+  output_dir: "models/tuning"
+
+lora:
+  enabled: true
+  rank: 8
+  alpha: 16
+  dropout: 0.1
+  target_modules:
+    - "q_proj"
+    - "v_proj"
 
 paths:
   data_dir: "data/"
   model_dir: "models/pegasus_samsum/final_model"
+  adapter_dir: "models/pegasus_samsum/lora_adapter"

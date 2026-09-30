@@ -3,6 +3,8 @@ torch
 transformers
 accelerate
 sentencepiece
+protobuf
+peft>=0.19.1
 
 # Dataset
 datasets
@@ -11,6 +13,7 @@ datasets
 evaluate
 rouge-score
 nltk
+optuna
 
 # Data Handling
 pandas

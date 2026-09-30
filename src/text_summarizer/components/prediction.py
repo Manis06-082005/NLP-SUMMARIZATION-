@@ -2,24 +2,36 @@ import sys
 from pathlib import Path
 
 import torch
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+from transformers import AutoTokenizer
 
 from src.text_summarizer.exception import CustomException
 from src.text_summarizer.logger import logger
-from src.text_summarizer.utils import read_yaml
+from src.text_summarizer.utils import read_yaml, resolve_path
+from src.text_summarizer.components.lora import load_model_for_inference
 
 
 class PredictionPipeline:
     def __init__(self):
         try:
-            project_root = Path(__file__).resolve().parents[3]
-            self.config = read_yaml(project_root / "config" / "config.yaml")
-            model_path = project_root / self.config["paths"]["model_dir"]
+            self.config = read_yaml("config/config.yaml")
+            model_path = resolve_path(self.config["paths"]["model_dir"])
+            adapter_path = resolve_path(self.config["paths"]["adapter_dir"])
+            tokenizer_path = (
+                adapter_path
+                if (adapter_path / "tokenizer_config.json").exists()
+                else model_path
+            )
 
-            logger.info(f"Loading trained model from: {model_path}")
+            logger.info(f"Loading tokenizer from: {tokenizer_path}")
 
-            self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-            self.model = AutoModelForSeq2SeqLM.from_pretrained(model_path)
+            # This checkpoint contains a SentencePiece model but no tokenizer.json.
+            # Avoid fast-tokenizer conversion, which can misread spiece.model as text.
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                tokenizer_path,
+                use_fast=False,
+                local_files_only=True,
+            )
+            self.model = load_model_for_inference(model_path, adapter_path)
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             self.model.to(self.device)
             self.model.eval()

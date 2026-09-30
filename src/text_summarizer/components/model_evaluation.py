@@ -1,4 +1,6 @@
 import sys
+from pathlib import Path
+
 import evaluate
 import torch
 
@@ -8,8 +10,9 @@ from transformers import (
 )
 
 from src.text_summarizer.logger import logger
-from src.text_summarizer.utils import read_yaml
+from src.text_summarizer.utils import read_yaml, resolve_path
 from src.text_summarizer.exception import CustomException
+from src.text_summarizer.components.lora import load_model_for_inference
 
 
 class ModelEvaluation:
@@ -23,7 +26,13 @@ class ModelEvaluation:
             )
 
             # Path where our trained model is saved
-            model_path = self.config["paths"]["model_dir"]
+            model_path = resolve_path(self.config["paths"]["model_dir"])
+            adapter_path = resolve_path(self.config["paths"]["adapter_dir"])
+            tokenizer_path = (
+                adapter_path
+                if (Path(adapter_path) / "tokenizer_config.json").exists()
+                else model_path
+            )
 
             logger.info(
                 f"Loading trained model from: {model_path}"
@@ -31,13 +40,12 @@ class ModelEvaluation:
 
             # Load our fine-tuned tokenizer
             self.tokenizer = AutoTokenizer.from_pretrained(
-                model_path
+                tokenizer_path,
+                use_fast=False,
             )
 
             # Load our fine-tuned Pegasus model
-            self.model = AutoModelForSeq2SeqLM.from_pretrained(
-                model_path
-            )
+            self.model = load_model_for_inference(model_path, adapter_path)
 
             # Choose GPU if available
             self.device = torch.device(
