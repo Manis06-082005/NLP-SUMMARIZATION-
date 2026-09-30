@@ -7,7 +7,7 @@ from transformers import AutoTokenizer
 from src.text_summarizer.exception import CustomException
 from src.text_summarizer.logger import logger
 from src.text_summarizer.utils import read_yaml, resolve_path
-from src.text_summarizer.components.lora import load_model_for_inference
+from transformers import AutoModelForSeq2SeqLM
 
 
 class PredictionPipeline:
@@ -15,12 +15,7 @@ class PredictionPipeline:
         try:
             self.config = read_yaml("config/config.yaml")
             model_path = resolve_path(self.config["paths"]["model_dir"])
-            adapter_path = resolve_path(self.config["paths"]["adapter_dir"])
-            tokenizer_path = (
-                adapter_path
-                if (adapter_path / "tokenizer_config.json").exists()
-                else model_path
-            )
+            tokenizer_path = model_path
 
             logger.info(f"Loading tokenizer from: {tokenizer_path}")
 
@@ -31,7 +26,10 @@ class PredictionPipeline:
                 use_fast=False,
                 local_files_only=True,
             )
-            self.model = load_model_for_inference(model_path, adapter_path)
+            self.model = AutoModelForSeq2SeqLM.from_pretrained(
+                model_path,
+                local_files_only=True,
+            )
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             self.model.to(self.device)
             self.model.eval()

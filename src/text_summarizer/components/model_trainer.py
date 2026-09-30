@@ -1,6 +1,4 @@
 import sys
-import json
-
 import torch
 
 from transformers import (
@@ -14,7 +12,6 @@ from transformers import (
 from src.text_summarizer.logger import logger
 from src.text_summarizer.utils import read_yaml, resolve_path
 from src.text_summarizer.exception import CustomException
-from src.text_summarizer.components.lora import create_lora_model
 
 
 class ModelTrainer:
@@ -41,11 +38,7 @@ class ModelTrainer:
             # ---------------------------------
             # 3. Load pretrained Pegasus model
             # ---------------------------------
-            if self.config["lora"]["enabled"]:
-                self.model = create_lora_model(model_name, self.config["lora"])
-                self.model.print_trainable_parameters()
-            else:
-                self.model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+            self.model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 
             # Required/recommended when using
             # gradient checkpointing
@@ -132,21 +125,7 @@ class ModelTrainer:
             # 3. Training Arguments
             # =================================
 
-            tuned_parameters = {}
-            tuning_result = resolve_path(self.config["tuning"]["output_dir"]) / "best_hyperparameters.json"
-            if (
-                self.config["training"].get("use_tuned_hyperparameters", False)
-                and tuning_result.exists()
-            ):
-                with tuning_result.open("r", encoding="utf-8") as result_file:
-                    tuned_parameters = json.load(result_file)["hyperparameters"]
-                logger.info("Using tuned hyperparameters from %s", tuning_result)
-
-            output_dir = resolve_path(
-                self.config["paths"]["adapter_dir"]
-                if self.config["lora"]["enabled"]
-                else self.config["paths"]["model_dir"]
-            )
+            output_dir = resolve_path(self.config["paths"]["model_dir"])
 
             training_args = Seq2SeqTrainingArguments(
 
@@ -154,21 +133,15 @@ class ModelTrainer:
                 output_dir=output_dir,
 
                 # Training hyperparameters
-                num_train_epochs=float(
-                    tuned_parameters.get("num_train_epochs", self.config["training"]["epochs"])
-                ),
+                num_train_epochs=float(self.config["training"]["epochs"]),
 
-                learning_rate=float(
-                    tuned_parameters.get("learning_rate", self.config["training"]["learning_rate"])
-                ),
+                learning_rate=float(self.config["training"]["learning_rate"]),
 
-                weight_decay=float(tuned_parameters.get("weight_decay", 0.0)),
+                weight_decay=0.0,
 
-                warmup_ratio=float(tuned_parameters.get("warmup_ratio", 0.0)),
+                warmup_ratio=0.0,
 
-                label_smoothing_factor=float(
-                    tuned_parameters.get("label_smoothing_factor", 0.0)
-                ),
+                label_smoothing_factor=0.0,
 
                 per_device_train_batch_size=int(
                     self.config["training"]["batch_size"]

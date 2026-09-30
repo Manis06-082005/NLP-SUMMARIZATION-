@@ -3,7 +3,6 @@ import sys
 from src.text_summarizer.components.data_ingestion import DataIngestion
 from src.text_summarizer.components.data_transformation import DataTransformation
 from src.text_summarizer.components.model_trainer import ModelTrainer
-from src.text_summarizer.components.model_evaluation import ModelEvaluation
 
 from src.text_summarizer.logger import logger
 from src.text_summarizer.exception import CustomException
@@ -70,40 +69,11 @@ class TrainingPipeline:
             )
 
 
-            # ==========================================
-            # 4. MODEL EVALUATION
-            # ==========================================
-
-            logger.info(
-                "Starting model evaluation"
-            )
-
-            model_evaluation = ModelEvaluation()
-
-            rouge_scores = (
-                model_evaluation.evaluate_model(
-                    dataset
-                )
-            )
-
-            logger.info(
-                "Model evaluation completed"
-            )
-
-
-            # ==========================================
-            # 5. RETURN RESULTS
-            # ==========================================
-
-            logger.info(
-                f"ROUGE Scores: {rouge_scores}"
-            )
-
             logger.info(
                 "Training pipeline completed successfully"
             )
 
-            return rouge_scores
+            return model
 
 
         except Exception as e:

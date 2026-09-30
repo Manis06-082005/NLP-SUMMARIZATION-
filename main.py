@@ -1,7 +1,6 @@
 from src.text_summarizer.components.data_ingestion import DataIngestion
 from src.text_summarizer.components.data_transformation import DataTransformation
 from src.text_summarizer.components.model_trainer import ModelTrainer
-from src.text_summarizer.components.model_evaluation import ModelEvaluation
 
 
 # ==========================================
@@ -35,24 +34,5 @@ model = model_trainer.train(
 )
 
 
-# ==========================================
-# 4. MODEL EVALUATION
-# ==========================================
-
-model_evaluation = ModelEvaluation()
-
-rouge_scores = model_evaluation.evaluate_model(
-    dataset
-)
-
-
-# ==========================================
-# 5. PRINT RESULT
-# ==========================================
-
-print("\nModel Evaluation Results")
-
-print("ROUGE-1 :", rouge_scores["rouge1"])
-print("ROUGE-2 :", rouge_scores["rouge2"])
-print("ROUGE-L :", rouge_scores["rougeL"])
-print("ROUGE-Lsum :", rouge_scores["rougeLsum"])
+print("\nTraining completed successfully")
+print("The trained model is ready for prediction.")

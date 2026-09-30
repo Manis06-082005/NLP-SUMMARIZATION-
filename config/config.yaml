@@ -17,26 +17,9 @@ training:
   fp16: true
 
   smoke_test: false
-  use_tuned_hyperparameters: true
   train_samples: 50
   validation_samples: 20
-
-tuning:
-  n_trials: 3
-  train_samples: 500
-  validation_samples: 100
-  output_dir: "models/tuning"
-
-lora:
-  enabled: true
-  rank: 8
-  alpha: 16
-  dropout: 0.1
-  target_modules:
-    - "q_proj"
-    - "v_proj"
 
 paths:
   data_dir: "data/"
   model_dir: "models/pegasus_samsum/final_model"
-  adapter_dir: "models/pegasus_samsum/lora_adapter"

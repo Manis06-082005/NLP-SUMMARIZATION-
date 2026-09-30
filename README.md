@@ -1,8 +1,7 @@
 # Dialogue Summarization
 
-Fine-tune a Pegasus sequence-to-sequence model on the SAMSum dialogue dataset,
-evaluate generated summaries with ROUGE, and serve predictions through a small
-FastAPI web app.
+Fine-tune a Pegasus sequence-to-sequence model on the SAMSum dialogue dataset
+and serve predictions through a small FastAPI web app.
 
 ## Setup
 
@@ -20,7 +19,7 @@ The first run downloads the configured dataset and pretrained model. Training
 is much faster with a CUDA-enabled PyTorch installation and a compatible GPU.
 On CPU, mixed precision is disabled automatically.
 
-## Train and evaluate
+## Train
 
 From the repository root, run:
 
@@ -29,10 +28,8 @@ python main.py
 ```
 
 Settings live in `config/config.yaml`. Set `training.smoke_test: true` to train
-on the configured small sample while checking the pipeline. To tune first, run
-`python tune.py`; the trainer uses the saved best parameters when
-`training.use_tuned_hyperparameters` is enabled. Training outputs are written
-under `models/`.
+on the configured small sample while checking the pipeline. Training outputs are
+written under `models/`.
 
 ## Run the web app
 
@@ -44,5 +41,5 @@ uvicorn app.app:app --host 127.0.0.1 --port 8000
 
 Open <http://127.0.0.1:8000> to enter a dialogue. The JSON API accepts
 `POST /predict` with `{"dialogue":"..."}`; `GET /health` reports service
-status. The saved model or LoRA adapter must exist locally before predictions
+status. The saved trained model must exist locally before predictions
 will work.
