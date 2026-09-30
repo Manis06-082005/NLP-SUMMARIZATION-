@@ -38,7 +38,7 @@ class PredictionPipeline:
         except Exception as exc:
             raise CustomException(exc, sys) from exc
 
-    def predict(self, dialogue: str) -> str:
+    def predict(self, dialogue: str, summary_length: int | None = None) -> str:
         try:
             logger.info("Generating summary")
             inputs = self.tokenizer(
@@ -52,7 +52,7 @@ class PredictionPipeline:
             with torch.no_grad():
                 output_ids = self.model.generate(
                     **inputs,
-                    max_new_tokens=self.config["training"]["max_target_length"],
+                    max_new_tokens=summary_length or self.config["training"]["max_target_length"],
                     num_beams=4,
                     early_stopping=True,
                 )
