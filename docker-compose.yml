@@ -1,0 +1,11 @@
+services:
+  summarizer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dialouge-summarizer:production
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models/pegasus_samsum/final_model:/app/models/pegasus_samsum/final_model:ro
+    restart: unless-stopped

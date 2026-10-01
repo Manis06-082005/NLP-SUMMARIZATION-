@@ -1,0 +1,13 @@
+torch
+transformers
+accelerate
+sentencepiece
+protobuf
+
+fastapi
+uvicorn
+
+PyYAML
+python-box
+ensure
+tqdm
