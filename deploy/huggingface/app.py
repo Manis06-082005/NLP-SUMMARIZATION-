@@ -1,18 +1,20 @@
 """Gradio entry point for a Hugging Face ZeroGPU Space."""
 import os
-from pathlib import Path
-
 import spaces  # Import before torch to enable ZeroGPU's CUDA support.
 import gradio as gr
 import torch
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 
-# Upload the saved model files to the Space's final_model/ directory, or set
-# MODEL_ID to a Hugging Face model repository containing your trained model.
-MODEL_SOURCE = os.environ.get("MODEL_ID") or str(Path(__file__).parent / "final_model")
-tokenizer = AutoTokenizer.from_pretrained(MODEL_SOURCE, use_fast=False)
-model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_SOURCE)
+# Keep model weights in a model repository, separate from the Space's code.
+MODEL_SOURCE = os.environ.get("MODEL_ID", "nathmanish/PegasusSamsum")
+MODEL_SUBFOLDER = os.environ.get("MODEL_SUBFOLDER", "final_model")
+tokenizer = AutoTokenizer.from_pretrained(
+    MODEL_SOURCE, subfolder=MODEL_SUBFOLDER, use_fast=False,
+)
+model = AutoModelForSeq2SeqLM.from_pretrained(
+    MODEL_SOURCE, subfolder=MODEL_SUBFOLDER,
+)
 model.to("cuda")
 model.eval()
 
